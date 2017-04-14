@@ -1,6 +1,7 @@
 package worker;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import java.sql.*;
 import org.json.JSONObject;
@@ -47,7 +48,10 @@ class Worker {
   }
 
   static Jedis connectToRedis(String host) {
-    Jedis conn = new Jedis(host);
+    String pass = System.getenv("REDIS_PASSWORD");
+    JedisShardInfo shardInfo = new JedisShardInfo(host);
+    shardInfo.setPassword(pass);
+    Jedis conn = new Jedis(shardInfo);
 
     while (true) {
       try {
@@ -68,18 +72,13 @@ class Worker {
     Connection conn = null;
 
     try {
-
+      String user = System.getenv("POSTGRES_USER");
+      String pass = System.getenv("POSTGRES_PASSWORD");
       Class.forName("org.postgresql.Driver");
-      String url = "jdbc:postgresql://" + host + "/postgres";
+      String url = "jdbc:postgresql://" + host + ":5432/postgres";
+      System.err.println(url);
 
-      while (conn == null) {
-        try {
-          conn = DriverManager.getConnection(url, "postgres", "");
-        } catch (SQLException e) {
-          System.err.println("Failed to connect to db - retrying");
-          sleep(1000);
-        }
-      }
+      conn = DriverManager.getConnection(url, user, pass);
 
       PreparedStatement st = conn.prepareStatement(
         "CREATE TABLE IF NOT EXISTS votes (id VARCHAR(255) NOT NULL UNIQUE, vote VARCHAR(255) NOT NULL)");
