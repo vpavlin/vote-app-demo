@@ -27,8 +27,18 @@ var query = require('./views/config/config.json');
 async.retry(
   {times: 1000, interval: 1000},
   function(callback) {
-    pg.connect('postgres://postgres@db/postgres', function(err, client, done) {
+    var config = {
+      user: process.env.POSTGRES_USER,
+      database: "postgres",
+      password: process.env.POSTGRES_PASSWORD,
+      host: 'db', // Server hosting the postgres database 
+      port: 5432 //env var: PGPORT
+    };
+
+    console.log(config)
+    pg.connect(config, function(err, client, done) {
       if (err) {
+        console.error(err)
         console.error("Failed to connect to db");
       }
       callback(err, client);
